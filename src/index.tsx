@@ -7,17 +7,14 @@ const server = Bun.serve({
   port: process.env.PORT ?? 3000,
   websocket: {
     open: (ws) => {
-      console.info("Client connected");
+      console.info({ message: "Client connected" });
       ws.subscribe("/");
-      console.info("subscribed to /");
     },
     message: (ws, message) => {
-      console.info("Client sent message", message);
       ws.publish("/", message);
-      console.info("published message");
     },
     close: (ws) => {
-      console.info("Client disconnected");
+      console.info({ message: "Client disconnected" });
     },
   },
   async fetch(request) {
@@ -77,4 +74,6 @@ const server = Bun.serve({
   },
 });
 
-console.info(`Server started at http://localhost:${server.port}`);
+console.info({
+  message: `Server started at http://localhost:${server.port}`,
+});

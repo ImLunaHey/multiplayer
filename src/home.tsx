@@ -32,7 +32,7 @@ const Home: React.FC = () => {
     [key: string]: { x: number; y: number };
   } = {};
   const { sendMessage, lastMessage, readyState } = useWebSocket(
-    "ws://localhost:3000/connect"
+    `${location.origin.replace("http", "ws")}/connect`
   );
 
   if (lastMessage) {
@@ -71,13 +71,7 @@ const Home: React.FC = () => {
       <main className="sm:w-4/6 w-5/6 container mx-auto mb-5">
         <Text>Hi</Text>
         {Object.entries(cursors).map(([uuid, { x, y }]) => (
-          <Cursor
-            key={uuid}
-            colour={stringToColour(uuid)}
-            x={x}
-            y={y}
-            text={uuid}
-          />
+          <Cursor key={uuid} colour={stringToColour(uuid)} x={x} y={y} />
         ))}
       </main>
 
