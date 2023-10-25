@@ -3,6 +3,16 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { App } from "./components/app";
 import { AppShell } from "./app-shell";
 
+const script = await Bun.build({
+  entrypoints: ["./src/home.tsx"],
+  minify: false,
+  target: "browser",
+  sourcemap: "none",
+  define: {
+    global: "window",
+  },
+});
+
 const server = Bun.serve({
   port: process.env.PORT ?? 3000,
   websocket: {
@@ -35,22 +45,6 @@ const server = Bun.serve({
     }
 
     if (url.pathname === "/script.js") {
-      const script = await Bun.build({
-        entrypoints: ["./src/home.tsx"],
-        minify: false,
-        target: "browser",
-        sourcemap: "none",
-        define: {
-          global: "window",
-        },
-      });
-      if (!script.success) {
-        return new Response("", {
-          headers: {
-            "Content-Type": "application/javascript",
-          },
-        });
-      }
       return new Response(await script.outputs[0].text(), {
         headers: {
           "Content-Type": "application/javascript",
