@@ -52,7 +52,9 @@ const Alert: React.FC<{ text: string }> = ({ text }) => (
   </div>
 );
 
-const uuid = randomUUID();
+// Get the uuid from local storage or generate a new one
+const uuid = localStorage.getItem("uuid") ?? randomUUID();
+if (!localStorage.getItem("uuid")) localStorage.setItem("uuid", uuid);
 
 const Home: React.FC = () => {
   const alerts: { text: string; uuid: string }[] = [];
