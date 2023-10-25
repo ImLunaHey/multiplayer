@@ -19,7 +19,13 @@ const server = Bun.serve<{
   port: process.env.PORT ?? 3000,
   websocket: {
     open: (ws) => {
-      console.info({ message: "Client connected", uuid: ws.data.uuid });
+      console.info(
+        JSON.stringify(
+          { message: "Client connected", uuid: ws.data.uuid },
+          null,
+          0
+        )
+      );
       ws.subscribe("/");
       ws.publish(
         "/",
@@ -59,7 +65,13 @@ const server = Bun.serve<{
           0
         )
       );
-      console.info({ message: "Client disconnected", uuid: ws.data.uuid });
+      console.info(
+        JSON.stringify(
+          { message: "Client disconnected", uuid: ws.data.uuid },
+          null,
+          0
+        )
+      );
     },
   },
   async fetch(request) {
@@ -107,6 +119,12 @@ const server = Bun.serve<{
   },
 });
 
-console.info({
-  message: `Server started at http://localhost:${server.port}`,
-});
+console.info(
+  JSON.stringify(
+    {
+      message: `Server started at http://localhost:${server.port}`,
+    },
+    null,
+    0
+  )
+);
