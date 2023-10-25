@@ -2,7 +2,7 @@ export const AppShell = () => (
   <html lang="en">
     <head>
       <title>Multiplayer</title>
-      <meta name="description" content="Minify things" />
+      <meta name="description" content="Multiplayer experiments" />
       <meta charSet="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <meta name="view-transition" content="same-origin" />
