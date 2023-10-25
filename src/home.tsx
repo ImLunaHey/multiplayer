@@ -9,6 +9,24 @@ import { Title } from "./components/title";
 import { randomUUID } from "crypto";
 import { ReadyState } from "react-use-websocket";
 
+if (!("randomUUID" in global.crypto))
+  // https://stackoverflow.com/a/2117523/2800218
+  // LICENSE: https://creativecommons.org/licenses/by-sa/4.0/legalcode
+  crypto.randomUUID = function randomUUID() {
+    return (
+      // @ts-expect-error
+      ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(
+        /[018]/g,
+        // @ts-expect-error
+        (c) =>
+          (
+            c ^
+            (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))
+          ).toString(16)
+      )
+    );
+  };
+
 // string to random hex colour
 const stringToColour = (str: string) => {
   let hash = 0;
@@ -43,7 +61,7 @@ const Home: React.FC = () => {
   }
 
   useEffect(() => {
-    const setFromEvent = (event: MouseEvent) => {
+    const sendMouseMovement = (event: MouseEvent) => {
       if (ReadyState.OPEN === readyState) {
         sendMessage(
           JSON.stringify({ uuid, x: event.clientX, y: event.clientY }),
@@ -51,8 +69,24 @@ const Home: React.FC = () => {
         );
       }
     };
-    window.addEventListener("mousemove", setFromEvent);
-    return () => window.removeEventListener("mousemove", setFromEvent);
+    const sendTouchMovement = (event: TouchEvent) => {
+      if (ReadyState.OPEN === readyState) {
+        sendMessage(
+          JSON.stringify({
+            uuid,
+            x: event.touches[0].clientX,
+            y: event.touches[0].clientY,
+          }),
+          false
+        );
+      }
+    };
+    window.addEventListener("mousemove", sendMouseMovement);
+    window.addEventListener("touchmove", sendTouchMovement);
+    return () => {
+      window.removeEventListener("mousemove", sendMouseMovement);
+      window.removeEventListener("touchmove", sendTouchMovement);
+    };
   }, [readyState]);
 
   return (
