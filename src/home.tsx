@@ -69,7 +69,11 @@ const Home: React.FC = () => {
       </header>
 
       <main className="sm:w-4/6 w-5/6 container mx-auto mb-5">
-        <Text>Hi</Text>
+        <Text>
+          <Link href="https://github.com/ImLunaHey/multiplayer" external>
+            github.com/ImLunaHey/multiplayer
+          </Link>
+        </Text>
         {Object.entries(cursors).map(([uuid, { x, y }]) => (
           <Cursor key={uuid} colour={stringToColour(uuid)} x={x} y={y} />
         ))}
