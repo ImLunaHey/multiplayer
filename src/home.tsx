@@ -1,5 +1,5 @@
 /// <reference lib="dom" />
-import { useEffect, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { Text } from "./components/text";
 import { Cursor } from "./components/cursor";
 import { useWebSocket } from "react-use-websocket/src/lib/use-websocket";
@@ -43,20 +43,61 @@ const stringToColour = (str: string) => {
   return colour;
 };
 
+const Alert: React.FC<{ text: string }> = ({ text }) => (
+  <div
+    className="fixed flex items-center w-full max-w-xs p-4 rounded-lg right-5 bottom-5 text-white border bg-[#0e0c15]"
+    role="alert"
+  >
+    <div className="text-sm font-normal">{text}</div>
+  </div>
+);
+
 const uuid = randomUUID();
 
 const Home: React.FC = () => {
-  const cursors: {
-    [key: string]: { x: number; y: number };
-  } = {};
+  const alerts: { text: string; uuid: string }[] = [];
+  const cursors: { [key: string]: { x: number; y: number } } = {};
   const { sendMessage, lastMessage, readyState } = useWebSocket(
-    `${location.origin.replace("http", "ws")}/connect`
+    `${location.origin.replace("http", "ws")}/connect?uuid=${uuid}`,
+    {
+      retryOnError: true,
+      reconnectAttempts: 10,
+      reconnectInterval: 6000,
+      shouldReconnect: (closeEvent) => true,
+    }
   );
 
   if (lastMessage) {
     const data = JSON.parse(lastMessage.data);
-    if (data.uuid !== uuid) {
+    const eventType = data.type;
+    if (eventType === "join") {
+      // Dont add a duplicate alert
+      if (!alerts.find((alert) => alert.uuid === data.uuid)) {
+        alerts.push({
+          text: `${stringToColour(data.uuid)} has joined the game!`,
+          uuid: data.uuid,
+        });
+
+        // Remove the alert after 5 seconds
+        setTimeout(() => {
+          alerts.splice(1);
+        }, 5_000);
+      }
+    }
+    if (eventType === "update") {
       cursors[data.uuid] = { x: data.x, y: data.y };
+    }
+    if (eventType === "leave") {
+      delete cursors[data.uuid];
+      alerts.push({
+        text: `${stringToColour(data.uuid)} has left the game!`,
+        uuid: data.uuid,
+      });
+
+      // Remove the alert after 5 seconds
+      setTimeout(() => {
+        alerts.splice(1);
+      }, 5_000);
     }
   }
 
@@ -64,7 +105,7 @@ const Home: React.FC = () => {
     const sendMouseMovement = (event: MouseEvent) => {
       if (ReadyState.OPEN === readyState) {
         sendMessage(
-          JSON.stringify({ uuid, x: event.clientX, y: event.clientY }),
+          JSON.stringify({ x: event.clientX, y: event.clientY }),
           false
         );
       }
@@ -108,9 +149,13 @@ const Home: React.FC = () => {
             github.com/ImLunaHey/multiplayer
           </Link>
         </Text>
-        {Object.entries(cursors).map(([uuid, { x, y }]) => (
-          <Cursor key={uuid} colour={stringToColour(uuid)} x={x} y={y} />
-        ))}
+        {useMemo(
+          () =>
+            Object.entries(cursors).map(([uuid, { x, y }]) => (
+              <Cursor key={uuid} colour={stringToColour(uuid)} x={x} y={y} />
+            )),
+          [cursors]
+        )}
       </main>
 
       <footer className="sm:w-4/6 w-5/6 container mx-auto mb-5">
@@ -124,6 +169,10 @@ const Home: React.FC = () => {
           src="https://v.fish.lgbt/pixel.gif?id=multiplayer.fish.lgbt"
         />
       </footer>
+
+      {alerts.map(({ uuid, text }, index) => (
+        <Alert key={uuid} text={text} />
+      ))}
     </>
   );
 };

@@ -13,24 +13,63 @@ const script = await Bun.build({
   },
 });
 
-const server = Bun.serve({
+const server = Bun.serve<{
+  uuid: string;
+}>({
   port: process.env.PORT ?? 3000,
   websocket: {
     open: (ws) => {
-      console.info({ message: "Client connected" });
+      console.info({ message: "Client connected", uuid: ws.data.uuid });
       ws.subscribe("/");
+      ws.publish(
+        "/",
+        JSON.stringify(
+          {
+            type: "join",
+            uuid: ws.data.uuid,
+          },
+          null,
+          0
+        )
+      );
     },
-    message: (ws, message) => {
-      ws.publish("/", message);
+    message: (ws, message: string) => {
+      ws.publish(
+        "/",
+        JSON.stringify(
+          {
+            type: "update",
+            uuid: ws.data.uuid,
+            ...JSON.parse(message),
+          },
+          null,
+          0
+        )
+      );
     },
     close: (ws) => {
-      console.info({ message: "Client disconnected" });
+      ws.publish(
+        "/",
+        JSON.stringify(
+          {
+            type: "leave",
+            uuid: ws.data.uuid,
+          },
+          null,
+          0
+        )
+      );
+      console.info({ message: "Client disconnected", uuid: ws.data.uuid });
     },
   },
   async fetch(request) {
     const url = new URL(request.url);
     if (url.pathname === "/connect") {
-      const upgraded = server.upgrade(request);
+      const upgraded = server.upgrade(request, {
+        data: {
+          uuid: url.searchParams.get("uuid"),
+        },
+      });
       if (!upgraded) {
         return new Response("Upgrade failed", { status: 400 });
       }
